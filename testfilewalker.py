@@ -5,31 +5,20 @@ Created on Jun 2, 2013
 '''
 import unittest
 from testtools import randomutils, randomtree
-from filedb import filewalker
-from filedb import duplicatefiledb
+import filewalker
+from filescollection import FilesCollection
 from basetools import debug
 
 class TestFileWalker(unittest.TestCase):
 
 
     def setUp(self):
-        self._m = duplicatefiledb.DuplicateFileDB( name="tfw")
-        self._db = self._m.db()
-        self._collection = self._db.create_collection( 'test' )
-        self._files = duplicatefiledb.FilesCollection( self._m.db(), "fc" )
+        self._files = FilesCollection( "fc" )
     
     def tearDown(self):
-        self._m.drop()
+        self._files.dropDB()
 
 
-    def testCreateDrop(self):
-        self._m = duplicatefiledb.DuplicateFileDB( name="tfw")
-        dbNames = self._m.client().database_names()
-        self.assertTrue( "tfw" in dbNames )
-        self._m.drop()
-        dbNames = self._m.client().database_names()
-        self.assertFalse( "tfw" in dbNames )
-        
     def testEmptyDir(self):
         
         d = randomutils.RandomDir()

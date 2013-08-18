@@ -8,7 +8,7 @@ import os
 from optparse import OptionParser
 import sys
 import itertools
-from duplicatefiledb import DuplicateFileDB, FilesCollection
+from filescollection import FilesCollection
 from basetools import debug
 from basetools import timer
 import pymongo
@@ -118,16 +118,10 @@ if __name__ == "__main__":
     else:
         dirs = sys.argv[1:]
 
-    try :
-        m = DuplicateFileDB()
-    except ( pymongo.errors.ConnectionFailure ) as e :
-        print "%s : Is the mongo deaemon running?" %e
-        exit(1)
-
     if file_filter == None:
         file_filter = all_files
         
-    files = FilesCollection( m.db())
+    files = FilesCollection()
     
     for d in dirs:
         print "Processing: %s" % d

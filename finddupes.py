@@ -24,13 +24,8 @@ def compare( path1, path2 ):
         
         
 if __name__ == '__main__':
-    try :
-        m = DuplicateFileDB()
-    except ( pymongo.errors.ConnectionFailure ) as e :
-        print "%s : Is the mongo deaemon running?" %e
-        exit(1)
-        
-    files = FilesCollection( m.db())
+
+    files = FilesCollection()
     
     for ( p1, checksum ) in files.allDuplicates() :
         print "File : %s has duplicates" % p1

@@ -120,12 +120,8 @@ USAGE
         flush = args.flush
         
         try :
-            m = duplicatefiledb.DuplicateFileDB()
-        except ( pymongo.errors.ConnectionFailure ) as e :
-            print "%s : Is the mongo deaemon running?" %e
-            exit(1)
-        
-        files = duplicatefiledb.FilesCollection( m.db())
+
+        files = FilesCollection()
         
         if args.flush :
             files.drop()
