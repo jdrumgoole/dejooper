@@ -8,7 +8,7 @@ import os
 from optparse import OptionParser
 import sys
 import itertools
-from dejooper.duplicatefiledb import DuplicateFileDB, FilesCollection
+from duplicatefiledb import DuplicateFileDB, FilesCollection
 from basetools import debug
 from basetools import timer
 import pymongo

@@ -88,7 +88,6 @@ def main(argv=None):
     program_license = '''%s
 
   Created by Joe.Drumgoole@10gen.com on %s.
-  Copyright 2013 organization_name. All rights reserved.
   
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
@@ -106,12 +105,12 @@ USAGE
         parser.add_argument( "-s", "--scan", 
                              dest="scandir", 
                              help="scan a directory for content")
-        parser.add_argument( "-d", "--dedupe", 
+        parser.add_argument( "-u", "--dedupe", 
                              dest="dedupe", action="store_true", 
                              help="produce a list of duplicate files")
-        parser.add_argument( "-f", "--flush", 
+        parser.add_argument( "-d", "--drop", 
                              dest="flush", action="store_true", 
-                             help="produce a list of duplicate files")
+                             help="drop th existing databases before scanning")
         
         # Process arguments
         args = parser.parse_args()

@@ -17,6 +17,7 @@ from testtools import randomutils
 from basetools import debug,timer
 from filetools.checksum import Checksum
 import shutil
+import socket
 
 class DuplicateFileDB :
     
@@ -149,7 +150,8 @@ class FilesCollection :
         else:
             checksum = self._checksum.blockComputeFile( path )
             
-        self._filesCollection.insert( { "path"     : path,
+        self._filesCollection.insert( { "host"     : socket.gethostname(),
+                                        "path"     : path,
                                         "filename" : os.path.basename( path ),
                                         "size"     : statInfo.size(),
                                         "ctime"    : statInfo.ctime(),
@@ -169,7 +171,8 @@ class FilesCollection :
             checksum = self._checksum.blockComputeFile( path )
             
         self._filesCollection.update( {"path" : path },
-                                      { "path"     : path,
+                                      { "host"     : socket.gethostname(),
+                                        "path"     : path,
                                         "filename" : os.path.basename( path ),
                                         "size"     : statInfo.size(),
                                         "ctime"    : statInfo.ctime(),
@@ -241,8 +244,10 @@ class FilesCollection :
         
     def isSameFile(self, fs, dbInfo):
         #
-        #If the file is the same size, has the same path and the same mtime and ctime we assume its
-        # the same file in which case we don't need to update the db or recalculate the checksum,
+        #If the file is the same size, has the same path and the same mtime and ctim
+        # as the file in the db we assume its the same file in which case we don't 
+        # need to update the db or recalculate the checksum.
+        #
         
         return (( fs.size()  == dbInfo[ 'size' ] ) and
                 ( fs.ctime() == dbInfo[ 'ctime'] ) and

@@ -4,7 +4,7 @@ Created on Jul 1, 2013
 @author: jdrumgoole
 '''
 import pymongo
-from dejooper.duplicatefiledb import DuplicateFileDB, FilesCollection
+from duplicatefiledb import DuplicateFileDB, FilesCollection
 from filetools.checksum import Checksum
 import sys
 import time
