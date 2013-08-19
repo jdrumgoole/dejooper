@@ -14,8 +14,9 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-import duplicatefiledb
 import pymongo
+
+from filescollection import FilesCollection
 
 from basetools import timer, debug
 from filewalker import FileWalker, FilterWalker
@@ -111,6 +112,9 @@ USAGE
         parser.add_argument( "-d", "--drop", 
                              dest="flush", action="store_true", 
                              help="drop th existing databases before scanning")
+        parser.add_argument( "-p", "--putone", 
+                             dest="onefile",
+                             help="add a single file to the DB")
         
         # Process arguments
         args = parser.parse_args()
@@ -118,13 +122,14 @@ USAGE
         scandir = args.scandir
         dedupe = args.dedupe
         flush = args.flush
-        
-        try :
-
+        onefile = args.onefile
         files = FilesCollection()
         
         if args.flush :
-            files.drop()
+            files.dropDB()
+        if onefile:
+            files.addFile( onefile, remote=True ) 
+            sys.exit(0)
         if scandir :
             scanFiles( files, args.scandir )
             
