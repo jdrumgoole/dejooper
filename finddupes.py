@@ -3,8 +3,7 @@ Created on Jul 1, 2013
 
 @author: jdrumgoole
 '''
-import pymongo
-from duplicatefiledb import DuplicateFileDB, FilesCollection
+from duplicatefiledb import FilesCollection
 from filetools.checksum import Checksum
 import sys
 import time
