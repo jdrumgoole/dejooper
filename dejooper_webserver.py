@@ -1,0 +1,40 @@
+from bottle import route, run, get, post, request
+import logging
+
+
+from filescollection import FilesCollection
+
+
+
+class DejooperWebServer :
+    
+    def __init__(self, name="dejooper", level=logging.DEBUG):
+        self._name = name 
+        logging.basicConfig(filename=name+".log", format=logging.BASIC_FORMAT)
+        self._log=logging.getLogger( name )
+        self._log.setLevel( level )
+        self._log.info( name + " instantiated" )
+        self._files = FilesCollection( dbname="web")
+
+
+
+@get('/get/:checksum' )
+def get( checksum ) :
+    log = logging.getLogger( "dejooper")
+    log.info( "Called: get" )
+    files = FilesCollection( dbname="web")
+    f = files.getFileByChecksum(checksum)
+    return f['path']
+
+
+@route('/add', method='POST')
+def add():
+    log = logging.getLogger( "dejooper")
+    log.info( "Called: get" )
+    log.info( "request json %s:" % request.json )
+    files = FilesCollection( dbname="web")
+    files.addFileFromWeb( request.json )
+    return "All Ok" 
+
+server=DejooperWebServer()
+run(host='localhost', port=8080, debug=True)
