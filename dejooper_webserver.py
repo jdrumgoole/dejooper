@@ -1,4 +1,4 @@
-from bottle import route, run, get, post, request
+from bottle import route, run, get, post, request, template, SimpleTemplate
 import logging
 
 
@@ -18,6 +18,13 @@ class DejooperWebServer :
 
 
 
+@get('/duplicates')
+def duplicates():
+    log = logging.getLogger( "dejooper")
+    fc = FilesCollection( dbname="web")
+    log.info( "Called duplicates")
+    return template( "duplicates", filesCollection=fc)
+    
 @get('/get/:checksum' )
 def get( checksum ) :
     log = logging.getLogger( "dejooper")

@@ -14,13 +14,17 @@ import os
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-import pymongo
-
 from filescollection import FilesCollection
 
 from basetools import timer, debug
 from filewalker import FileWalker, FilterWalker
 import time
+import requests
+from filetools import filestat
+from filetools.checksum import Checksum
+import socket
+import json
+
 
 __all__ = []
 __version__ = 0.1
@@ -44,7 +48,27 @@ def findDuplicates( filesCollection ):
                 print "Same file"
                 sys.exit(1)
                 
-def scanFiles( filesCollection, d ):
+def webUpload( checksum, path ):
+    
+    statInfo = filestat.FileStat( path )
+    
+    payload =  { "host"     : socket.gethostname(),
+                 "path"     : path,
+                 "filename" : os.path.basename( path ),
+                 "size"     : statInfo.size(),
+                 "ctime"    : statInfo.ctime(),
+                 "atime"    : statInfo.atime(),
+                 "mtime"    : statInfo.mtime(),
+                 "isdir"    : statInfo.isdir(),
+                 "checksum" : checksum }
+    
+    headers = {'content-type': 'application/json'}
+    
+    requests.post( "http://localhost:8080/add", 
+                   data=json.dumps( payload ),
+                   headers=headers )
+    
+def scanFiles( filesCollection, d, upload ):
     
     timing = timer.Timer()
     
@@ -56,13 +80,18 @@ def scanFiles( filesCollection, d ):
     timing.start()
     for f in walker.walk( d ):
         count = count + 1
-        debug.msg( "Checking: %s" % f )
-        filesCollection.addFile( os.path.realpath( f ))
+        path = os.path.realpath( f )
+        debug.msg( "Checking: %s" % path )
+        checksum = filesCollection.addFile( path )
+        if upload :
+            webUpload(checksum, path  )
     timing.stop()
     
     return ( count, timing.elapsed())
 
 
+
+    
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
     def __init__(self, msg):
@@ -115,6 +144,21 @@ USAGE
         parser.add_argument( "-p", "--putone", 
                              dest="onefile",
                              help="add a single file to the DB")
+        parser.add_argument( "-w", "--webupload", 
+                             dest="webupload", action="store_true",
+                             help="upload files to web db")
+        parser.add_argument( "-g", "--sizegreater", 
+                             dest="sizegreater",
+                             type=int,
+                             help="files greater than X bytes in size")
+        parser.add_argument( "-l", "--sizelesser", 
+                             dest="sizelesser",
+                             type=int,
+                             help="files less than X bytes in size")
+        parser.add_argument( "-m", "--samename", 
+                             dest="samename",
+                             action="store_true",
+                             help="report files with the same name")
         
         # Process arguments
         args = parser.parse_args()
@@ -123,19 +167,38 @@ USAGE
         dedupe = args.dedupe
         flush = args.flush
         onefile = args.onefile
+        webUpload = args.webupload
+        sizeGreater = args.sizegreater
+        sizeLesser = args.sizelesser
+        sameName = args.samename
+        
+        if sizeGreater is None :
+            sizeGreater = 0 
+            
+        if sizeLesser is None or sizeLesser == 0 :
+            sizeLesser = sys.maxint
+            
         files = FilesCollection()
         
-        if args.flush :
+        if flush :
             files.dropDB()
         if onefile:
-            files.addFile( onefile, remote=True ) 
+            files.addFile( onefile )
             sys.exit(0)
         if scandir :
-            scanFiles( files, args.scandir )
+            scanFiles( files, args.scandir, webUpload )
+            
+        if args.sizegreater or args.sizelesser :
+            print "size: g:%i l:%i" % (sizeGreater, sizeLesser )
+            for (path, size ) in files.sizes( sizeGreater, sizeLesser ):
+                print "%s %i" % (path, size )
             
         if dedupe:
             findDuplicates( files )
-
+            
+        if sameName:
+            for f in files.sameFilenames() :
+                print f
         
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###

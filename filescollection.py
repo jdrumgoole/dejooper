@@ -40,11 +40,11 @@ class FilesCollection :
         
         self._duplicates = self._db[ self._collectionName +'_duplicates']
         
-        self._filesCollection.create_index( 'path', unique=True )
+        self._filesCollection.create_index( 'path' )
         self._filesCollection.create_index( "checksum" )
         self._filesCollection.create_index( 'ctime' )
            
-        self._duplicates.create_index( 'path', unique=True )
+        self._duplicates.create_index( 'path'  )
         self._duplicates.create_index( "checksum", unique=True )
 
            
@@ -95,10 +95,10 @@ class FilesCollection :
         return self._filesCollection.find_one( { "path" : path })
     
     def getFileByID(self, fileID):
-        return self._fileCollection.find_one( { "_id": fileID })
+        return self._filesCollection.find_one( { "_id": fileID })
     
     def getFileByChecksum(self, checksum):
-        return self._fileCollection.find_one( { "checksum": checksum })
+        return self._filesCollection.find_one( { "checksum": checksum })
     
     def inFilesCollection(self, path ):
         return self._filesCollection.find_one( {"path" : path })
@@ -145,7 +145,6 @@ class FilesCollection :
         
         return checksum
     
-        
     def updateFileInDb(self, statInfo, path ):
         
         if statInfo.isdir() :
@@ -177,7 +176,12 @@ class FilesCollection :
     def addFileFromWeb(self, payload ):
         
         self._filesCollection.update( {'path' : payload[ 'path']}, payload, upsert=True )
-        
+                
+        if  ( not payload[ 'isdir' ] ) and self.hasDuplicates( payload[ 'checksum'] ) :
+            self.addToDuplicates( payload[ 'checksum'], payload['path'] )
+            
+        return checksum
+    
     def addFile(self, path ):
         
         checksum = 0
@@ -209,20 +213,27 @@ class FilesCollection :
         for f in filesCursor :
             yield f[ 'path ']
         
+    def sizes(self, greaterThan, lessThan ):
+            
+        filesCursor = self._filesCollection.find( { "size" : { "$gt": greaterThan, "$lt" : lessThan }})
+        for f in filesCursor :
+            yield ( f[ 'path'], f['size'] )
+        
     def sameFilenames(self):
         
-        previous = ""
         
         filesCursor = self._filesCollection.find().sort( "filename", pymongo.ASCENDING)
         
-        sameNames = []
-        for f in filesCursor :
-            sameNames = []
-            sameNames.append( f[ 'path '])
-            previous = f['filename']
+        for f1 in filesCursor :
+            #print "f1 %s" % f1["filename"]
             for f2 in filesCursor :
-                while f2['filename' ]  == previous:
-                    sameNames.append( f2['path'])
+                #print "f2 %s" % f2['filename']
+                if f2['filename' ]  == f1['filename'] :
+                    #print "samefile"
+                    yield ( f2['path'])
+                else:
+                    break
+                
 
     def isSameFile(self, fs, dbInfo):
         #
@@ -243,7 +254,7 @@ class FilesCollection :
 class testFileDB( unittest.TestCase ):
     
     def setUp(self):
-        self._fc= FilesCollection( "dftest" )
+        self._fc= FilesCollection( dbname="fctest", collectionName = "fctest")
         
     def tearDown(self):
         self._fc.dropCollections()
@@ -271,10 +282,24 @@ class testFileDB( unittest.TestCase ):
         self.assertEqual(0, self._fc.duplicatesCount())
         f.rm()
 
-    def testAddRemoteFile(self):
+    def testAddFromWeb(self):
         
         f = randomutils.RandomFileHere( 1024 )
-        self._fc.addFile( f(), remote=True)
+        c =Checksum()
+        checksum = c.blockComputeFile(f())
+        statInfo = FileStat(f())
+        
+        payload =  { "host"     : socket.gethostname(),
+                     "path"     : f(),
+                     "filename" : os.path.basename(f()),
+                     "size"     : statInfo.size(),
+                     "ctime"    : statInfo.ctime(),
+                     "atime"    : statInfo.atime(),
+                     "mtime"    : statInfo.mtime(),
+                     "isdir"    : statInfo.isdir(),
+                     "checksum" : checksum }
+                  
+        self._fc.addFileFromWeb( payload )
 
         fRec = self._fc.getFileByPath( f())
         self.assertIsNotNone( fRec )
@@ -298,12 +323,31 @@ class testFileDB( unittest.TestCase ):
         f1.rm()
         f2.rm()
         
+    def testSizes(self):
+        f1 = randomutils.RandomFileHere( 1000 )
+        f2 = randomutils.RandomFileHere( 1500 )
+        
+        self._fc.addFile( f1())
+        self._fc.addFile( f2())
+        sizeList = []
+        for x in self._fc.sizes( 200, 2000 ):
+            sizeList.append( x )
+            
+        self.assertEqual( len( sizeList ), 2 )
+            
+        f1.rm()
+        f2.rm()
+        
+        
     def testAddDuplicate(self):
         f = randomutils.RandomFileHere( 1024 )
         fCopy = f() + "1"
         shutil.copyfile( f(), fCopy )
         c = self._fc.addFile( f())
         self._fc.addFile( fCopy )
+        self.assertTrue( self._fc.getFileByPath( f()))
+        self.assertTrue( self._fc.getFileByPath( fCopy ))
+        self.assertTrue( self._fc.getFileByChecksum( c ))
         self.assertTrue( self._fc.inDuplicates( c ))
         self.assertTrue( self._fc.pathInDuplicates( fCopy ))
         self.assertEqual( 1, self._fc.duplicatesCount())
