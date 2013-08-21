@@ -19,7 +19,7 @@ class DejooperWebServer :
 @get('/duplicates')
 def duplicates():
     log = logging.getLogger( "dejooper")
-    fc = FilesCollection( dbname="web")
+    fc = FilesCollection( dbname="filemetadata")
     log.info( "Called duplicates")
     return template( "duplicates", filesCollection=fc)
     
@@ -27,7 +27,7 @@ def duplicates():
 def get( checksum ) :
     log = logging.getLogger( "dejooper")
     log.info( "Called: get" )
-    files = FilesCollection( dbname="web")
+    files = FilesCollection( dbname="filemetadata")
     f = files.getFileByChecksum(checksum)
     return f['path']
 
@@ -35,9 +35,9 @@ def get( checksum ) :
 @route('/add', method='POST')
 def add():
     log = logging.getLogger( "dejooper")
-    log.info( "Called: get" )
+    log.info( "Called: add" )
     log.info( "request json %s:" % request.json )
-    files = FilesCollection( dbname="web")
+    files = FilesCollection( dbname="filemetadata")
     files.addFileFromWeb( request.json )
     return "All Ok" 
 
