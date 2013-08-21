@@ -80,7 +80,7 @@ class FilesCollection :
             
             for d in dupes :
                 if path != d['path']:
-                    yield ( d['path'], d['ctime'] )
+                    yield ( d['host'], d['path'], d['ctime'] )
 
     
     def allfiles(self):

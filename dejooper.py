@@ -41,9 +41,9 @@ def findSameNames( filesCollection ):
 def findDuplicates( filesCollection ):
     for ( p1, checksum ) in filesCollection.allDuplicates() :
         print "File : %s has duplicates" % p1
-        for ( p2, ctime ) in filesCollection.getDuplicates( p1, checksum ):
+        for ( host, p2, ctime ) in filesCollection.getDuplicates( p1, checksum ):
             ltime = time.localtime( ctime )
-            print "    created: %s, %s" % (time.asctime( ltime ), p2 )
+            print "    %s %s://%s" % ( time.asctime( ltime ), host, p2 )
             if p1 == p2 :
                 print "Same file"
                 sys.exit(1)
@@ -165,6 +165,10 @@ USAGE
         parser.add_argument( "-x", "--host", 
                              dest="serverHost",
                              help="host to upload to")
+        parser.add_argument( "-n", "--dbname", 
+                             dest="dbname",
+                             default="filemetadata",
+                             help="which database do we want to use")
         
         # Process arguments
         args = parser.parse_args()
@@ -184,6 +188,7 @@ USAGE
         sizeGreater = args.sizegreater
         sizeLesser = args.sizelesser
         sameName = args.samename
+        dbName = args.dbname 
         
         if sizeGreater is None :
             sizeGreater = 0 
@@ -191,7 +196,7 @@ USAGE
         if sizeLesser is None or sizeLesser == 0 :
             sizeLesser = sys.maxint
             
-        files = FilesCollection()
+        files = FilesCollection( dbname = dbName )
         
         if flush :
             files.dropDB()

@@ -4,8 +4,6 @@ import logging
 
 from filescollection import FilesCollection
 
-
-
 class DejooperWebServer :
     
     def __init__(self, name="dejooper", level=logging.DEBUG):
@@ -14,7 +12,7 @@ class DejooperWebServer :
         self._log=logging.getLogger( name )
         self._log.setLevel( level )
         self._log.info( name + " instantiated" )
-        self._files = FilesCollection( dbname="web")
+        self._files = FilesCollection( dbname="filemetadata")
 
 
 
