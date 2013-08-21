@@ -5,6 +5,7 @@ Created on May 29, 2013
 '''
 
 import pymongo
+from bson import binary
 import os
 from filetools.filestat import FileStat
 from filetools import checksum
@@ -123,7 +124,7 @@ class FilesCollection :
             return None
         
         return fs
-        
+       
     def addFileToDb(self, statInfo, path ):
         
         if statInfo.isdir() :
@@ -133,6 +134,7 @@ class FilesCollection :
 
         payload =  { "host"     : socket.gethostname(),
                      "path"     : path,
+#                     "header"   : binary.Binary( statInfo.header()),
                      "filename" : os.path.basename( path ),
                      "size"     : statInfo.size(),
                      "ctime"    : statInfo.ctime(),
@@ -155,6 +157,7 @@ class FilesCollection :
         self._filesCollection.update( {"path" : path },
                                       { "host"     : socket.gethostname(),
                                         "path"     : path,
+#                                        "header"   : binary.Binary( statInfo.header()),
                                         "filename" : os.path.basename( path ),
                                         "size"     : statInfo.size(),
                                         "ctime"    : statInfo.ctime(),
@@ -165,12 +168,14 @@ class FilesCollection :
                                         upsert=True )    
         return checksum
     
-    def addToDuplicates(self, checksum, path ):
+    def addToDuplicates(self, size, checksum, path ):
         dupeCount = self._filesCollection.find( { "checksum" : checksum }).count()
         
         if dupeCount > 1 :
             self._duplicates.update( { "checksum" : checksum },
-                                     { "path" : path, "checksum" : checksum },
+                                     { "path" : path, 
+                                      "checksum" : checksum,
+                                      "size" : size },
                                      upsert=True )
             
     def addFileFromWeb(self, payload ):
@@ -203,7 +208,7 @@ class FilesCollection :
           
         
         if  statInfo.isfile() and self.hasDuplicates( checksum ) :
-            self.addToDuplicates( checksum, path )
+            self.addToDuplicates( statInfo.size(), checksum, path )
             
         return checksum
       

@@ -18,11 +18,21 @@ class FileStat :
     def __init__( self, filename ):
     
         self._f = filename
+        self._header = 0 
         
         if os.path.islink( self._f ) :
             self._stat = os.lstat( self._f )
         elif os.path.exists( self._f ) :
             self._stat = os.stat( self._f )
+#             if os.path.isfile( self._f ):
+#                 try :
+#                     with open( self._f, "rb") as f :
+#                         self._header = f.read( 1024 )
+#                 except ( IOError, OSError ) :
+#                     pass
+#                     
+                
+                    
         else:
             raise OSError( "No such file : %s" % self._f )
 
@@ -67,6 +77,9 @@ class FileStat :
         
     def abspath(self):
         return self._abs_f 
+    
+    def header(self):
+        return self._header
     
     def atime(self):
         return self._stat[ stat.ST_ATIME ]
