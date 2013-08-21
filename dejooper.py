@@ -79,12 +79,15 @@ def scanFiles( filesCollection, d, upload, host ):
     
     timing.start()
     for f in walker.walk( d ):
-        count = count + 1
-        path = os.path.realpath( f )
-        debug.msg( "Checking: %s" % path )
-        checksum = filesCollection.addFile( path )
-        if upload :
-            uploadFile( host, checksum, path  )
+        try :
+            count = count + 1
+            path = os.path.realpath( f )
+            debug.msg( "Checking: %s" % path )
+            checksum = filesCollection.addFile( path )
+            if upload :
+                uploadFile( host, checksum, path  )
+        except OSError :
+            continue
     timing.stop()
     
     return ( count, timing.elapsed())
