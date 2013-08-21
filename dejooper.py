@@ -48,7 +48,7 @@ def findDuplicates( filesCollection ):
                 print "Same file"
                 sys.exit(1)
                 
-def webUpload( checksum, path ):
+def webUpload( host, checksum, path ):
     
     statInfo = filestat.FileStat( path )
     
@@ -64,11 +64,11 @@ def webUpload( checksum, path ):
     
     headers = {'content-type': 'application/json'}
     
-    requests.post( "http://localhost:8080/add", 
+    requests.post( host + "/add", 
                    data=json.dumps( payload ),
                    headers=headers )
     
-def scanFiles( filesCollection, d, upload ):
+def scanFiles( filesCollection, d, upload, host ):
     
     timing = timer.Timer()
     
@@ -84,7 +84,7 @@ def scanFiles( filesCollection, d, upload ):
         debug.msg( "Checking: %s" % path )
         checksum = filesCollection.addFile( path )
         if upload :
-            webUpload(checksum, path  )
+            webUpload( host, checksum, path  )
     timing.stop()
     
     return ( count, timing.elapsed())
@@ -145,7 +145,7 @@ USAGE
                              dest="onefile",
                              help="add a single file to the DB")
         parser.add_argument( "-w", "--webupload", 
-                             dest="webupload", action="store_true",
+                             dest="webupload",
                              help="upload files to web db")
         parser.add_argument( "-g", "--sizegreater", 
                              dest="sizegreater",
@@ -163,6 +163,13 @@ USAGE
         # Process arguments
         args = parser.parse_args()
         
+        serverHost=""
+        
+        if args.serverHost is None :
+            serverHost = "http://localhost:8080/"
+        else:
+            serverHost = args.serverHost
+
         scandir = args.scandir
         dedupe = args.dedupe
         flush = args.flush
@@ -186,7 +193,7 @@ USAGE
             files.addFile( onefile )
             sys.exit(0)
         if scandir :
-            scanFiles( files, args.scandir, webUpload )
+            scanFiles( files, args.scandir, webUpload, serverHost )
             
         if args.sizegreater or args.sizelesser :
             print "size: g:%i l:%i" % (sizeGreater, sizeLesser )

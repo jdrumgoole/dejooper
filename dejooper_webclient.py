@@ -14,14 +14,24 @@ import json
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+    parser.add_argument( "-x", "--host", 
+                         dest="serverHost",
+                         help="server to use")
     
     parser.add_argument( "-p", "--putone", 
                          dest="onefile",
                          help="add a single file to the DB")
-    
+  
     # Process arguments
     args = parser.parse_args()
     
+    if args.serverHost is None :
+        serverHost = "http://localhost:8080/"
+    else:
+        serverHost = args.serverHost
+
+        
     onefile=args.onefile
     
     if onefile:
@@ -49,6 +59,6 @@ if __name__ == '__main__':
         
         headers = {'content-type': 'application/json'}
         
-        requests.post( "http://localhost:8080/add", 
+        requests.post( serverHost + "/add", 
                        data=json.dumps( payload ),
                        headers=headers )
