@@ -168,14 +168,13 @@ class FilesCollection :
                                         upsert=True )    
         return checksum
     
-    def addToDuplicates(self, size, checksum, path ):
+    def addToDuplicates(self, checksum, path ):
         dupeCount = self._filesCollection.find( { "checksum" : checksum }).count()
         
         if dupeCount > 1 :
             self._duplicates.update( { "checksum" : checksum },
                                      { "path" : path, 
-                                      "checksum" : checksum,
-                                      "size" : size },
+                                      "checksum" : checksum },
                                      upsert=True )
             
     def addFileFromWeb(self, payload ):
@@ -208,7 +207,7 @@ class FilesCollection :
           
         
         if  statInfo.isfile() and self.hasDuplicates( checksum ) :
-            self.addToDuplicates( statInfo.size(), checksum, path )
+            self.addToDuplicates( checksum, path )
             
         return checksum
       
@@ -359,9 +358,9 @@ class testFileDB( unittest.TestCase ):
         
         dupes = self._fc.allDuplicates()
         
-        for (path1, checksum1 )  in dupes:
+        for (path1, checksum1, size )  in dupes:
             copies = self._fc.getDuplicates(path1, checksum1)
-            for ( path2, _ ) in copies:
+            for ( _, path2, _) in copies:
                 self.assertNotEqual( path1, path2 )
         f.rm()
         os.unlink( fCopy )

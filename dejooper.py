@@ -40,7 +40,7 @@ def findSameNames( filesCollection ):
 
 def findDuplicates( filesCollection ):
     for ( p1, checksum ) in filesCollection.allDuplicates() :
-        print "File : %s has duplicates" % p1
+        print "File : %s has duplicates" % ( p1 )
         for ( host, p2, ctime ) in filesCollection.getDuplicates( p1, checksum ):
             ltime = time.localtime( ctime )
             print "    %s %s://%s" % ( time.asctime( ltime ), host, p2 )
