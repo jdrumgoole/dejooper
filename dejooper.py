@@ -48,7 +48,7 @@ def findDuplicates( filesCollection ):
                 print "Same file"
                 sys.exit(1)
                 
-def webUpload( host, checksum, path ):
+def uploadFile( host, checksum, path ):
     
     statInfo = filestat.FileStat( path )
     
@@ -84,7 +84,7 @@ def scanFiles( filesCollection, d, upload, host ):
         debug.msg( "Checking: %s" % path )
         checksum = filesCollection.addFile( path )
         if upload :
-            webUpload( host, checksum, path  )
+            uploadFile( host, checksum, path  )
     timing.stop()
     
     return ( count, timing.elapsed())
@@ -145,7 +145,7 @@ USAGE
                              dest="onefile",
                              help="add a single file to the DB")
         parser.add_argument( "-w", "--webupload", 
-                             dest="webupload",
+                             action="store_true",
                              help="upload files to web db")
         parser.add_argument( "-g", "--sizegreater", 
                              dest="sizegreater",
@@ -159,6 +159,9 @@ USAGE
                              dest="samename",
                              action="store_true",
                              help="report files with the same name")
+        parser.add_argument( "-x", "--host", 
+                             dest="serverHost",
+                             help="host to upload to")
         
         # Process arguments
         args = parser.parse_args()
@@ -173,7 +176,7 @@ USAGE
         scandir = args.scandir
         dedupe = args.dedupe
         flush = args.flush
-        onefile = args.onefile
+        oneFile = args.onefile
         webUpload = args.webupload
         sizeGreater = args.sizegreater
         sizeLesser = args.sizelesser
@@ -189,8 +192,11 @@ USAGE
         
         if flush :
             files.dropDB()
-        if onefile:
-            files.addFile( onefile )
+            
+        if oneFile:
+            checksum = files.addFile( oneFile )
+            if webUpload :
+                uploadFile( serverHost, checksum, os.path.abspath( oneFile ))
             sys.exit(0)
         if scandir :
             scanFiles( files, args.scandir, webUpload, serverHost )
