@@ -154,7 +154,8 @@ class FilesCollection :
         else:
             checksum = self._checksum.blockComputeFile( path )
             
-        self._filesCollection.update( {"path" : path },
+        self._filesCollection.update( { "host": socket.gethostname(),
+                                        "path" : path },
                                       { "host"     : socket.gethostname(),
                                         "path"     : path,
 #                                        "header"   : binary.Binary( statInfo.header()),
@@ -179,7 +180,9 @@ class FilesCollection :
             
     def addFileFromWeb(self, payload ):
         
-        self._filesCollection.update( {'path' : payload[ 'path']}, payload, upsert=True )
+        self._filesCollection.update( { 'host': payload[ 'host' ],
+                                        'path' : payload[ 'path']}, 
+                                         payload, upsert=True )
                 
         if  ( not payload[ 'isdir' ] ) and self.hasDuplicates( payload[ 'checksum'] ) :
             self.addToDuplicates( payload[ 'checksum'], payload['path'] )
