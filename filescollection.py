@@ -32,7 +32,6 @@ class FilesCollection :
 
         self._db = dbname
         self._collectionName = collectionName
-        self._duplicatesName = self._collectionName + "_duplicates"
         self._hostname = host
 
         self._client = pymongo.MongoClient( self._hostname, port )
@@ -44,6 +43,8 @@ class FilesCollection :
         self._stats = self._db[ self._collectionName +'_stats']
         
         self._admin = self._db[ self._collectionName +'_admin']
+        
+        self._duplicates = self._db[ self._collectionName + '_duplicates' ]
         
         self._filesCollection.create_index( 'path' )
         self._filesCollection.create_index( "checksum" )
