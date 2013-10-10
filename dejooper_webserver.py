@@ -1,18 +1,18 @@
 from bottle import route, run, get, post, request, template, SimpleTemplate
 import logging
-
+import argparse
 
 from filescollection import FilesCollection
 
 class DejooperWebServer :
     
-    def __init__(self, name="dejooper", level=logging.DEBUG):
+    def __init__(self, name="dejooper", host='localhost', level=logging.DEBUG):
         self._name = name 
         logging.basicConfig(filename=name+".log", format=logging.BASIC_FORMAT)
         self._log=logging.getLogger( name )
         self._log.setLevel( level )
         self._log.info( name + " instantiated" )
-        self._files = FilesCollection( dbname="filemetadata")
+        self._files = FilesCollection( host=host, dbname="filemetadata")
 
 
 
@@ -41,5 +41,15 @@ def add():
     files.addFileFromWeb( request.json )
     return "All Ok" 
 
-server=DejooperWebServer()
+parser = argparse.ArgumentParser()
+
+parser.add_argument( "-x", "--dbhost", 
+                     dest="dbHost",
+                     default="localhost",
+                     help="server to use")
+
+args = parser.parse_args()
+  
+server=DejooperWebServer(host =args.dbHost )
+
 run(host='0.0.0.0', port=8080, debug=True)
