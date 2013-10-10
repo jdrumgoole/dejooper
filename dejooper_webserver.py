@@ -1,4 +1,4 @@
-from bottle import route, run, get, post, request, template, SimpleTemplate
+from bottle import route, run, get, request, template
 import logging
 import argparse
 
