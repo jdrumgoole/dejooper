@@ -50,6 +50,6 @@ parser.add_argument( "-x", "--dbhost",
 
 args = parser.parse_args()
   
-server=DejooperWebServer(host =args.dbHost )
+server=DejooperWebServer( host=args.dbHost )
 
 run(host='0.0.0.0', port=8080, debug=True)

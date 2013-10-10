@@ -5,17 +5,16 @@ Created on May 29, 2013
 '''
 
 import pymongo
-from bson import binary
 import os
 from filetools.filestat import FileStat
 from filetools import checksum
 import unittest
 from testtools import randomutils
-from basetools import debug,timer
 from filetools.checksum import Checksum
 import shutil
 import socket
-import requests
+import time
+
 
 
 class FilesCollection :
@@ -27,19 +26,24 @@ class FilesCollection :
     that is matched to more than one file in the files collections list.
     '''
 
-    def __init__(self, collectionName = "fc", dbname="DuplicateFileDB", port=27017 ):
+    def __init__(self, collectionName = "fc", 
+                 host="localhost",
+                 dbname="DuplicateFileDB", port=27017 ):
 
         self._db = dbname
         self._collectionName = collectionName
         self._duplicatesName = self._collectionName + "_duplicates"
+        self._hostname = host
 
-        self._client = pymongo.MongoClient('localhost', port )
+        self._client = pymongo.MongoClient( self._hostname, port )
         self._db = self._client[ self._db ]
         
         self._filesCollection = self._db[ self._collectionName ]
         self._checksum = checksum.Checksum()
         
-        self._duplicates = self._db[ self._collectionName +'_duplicates']
+        self._stats = self._db[ self._collectionName +'_stats']
+        
+        self._admin = self._db[ self._collectionName +'_admin']
         
         self._filesCollection.create_index( 'path' )
         self._filesCollection.create_index( "checksum" )
@@ -258,6 +262,17 @@ class FilesCollection :
     def filesCollection(self):
         return self._filesCollection
     
+    def startTimer(self, eventName ):
+        
+        e = self._stats.insert( { "event": eventName, "duration" : time.time() })
+    
+        return e
+    
+    def stopTimer(self, event ):
+        
+        self._stats.update( { "_id" : event[ '_id']}, 
+                            { "$set" : { "end" : time.time() }})
+        
 class testFileDB( unittest.TestCase ):
     
     def setUp(self):
@@ -361,7 +376,7 @@ class testFileDB( unittest.TestCase ):
         
         dupes = self._fc.allDuplicates()
         
-        for (path1, checksum1, size )  in dupes:
+        for (path1, checksum1 )  in dupes:
             copies = self._fc.getDuplicates(path1, checksum1)
             for ( _, path2, _) in copies:
                 self.assertNotEqual( path1, path2 )
