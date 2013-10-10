@@ -21,7 +21,6 @@ from filewalker import FileWalker, FilterWalker
 import time
 import requests
 from filetools import filestat
-from filetools.checksum import Checksum
 import socket
 import json
 
@@ -194,11 +193,6 @@ def main(argv=None):
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
-    except Exception, e:
-        indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
-        return 2
 
 if __name__ == "__main__":
         
