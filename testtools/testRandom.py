@@ -9,63 +9,81 @@ import os
 import string
 import shutil
 
-from testtools.randomutils import RandomFile, RandomString, RandomName, RandomTree, RandomDir
-
+from testtools.randomutils import RandomString, RandomPath
+from testtools.randomtree import RandomTree
 from filetools.treeutils import TreeUtils
 
 class testRandomFile( unittest.TestCase )  :
     
     def testRandomName(self):
-        f = RandomName()
-        self.assertFalse( os.path.isfile( f.name()))
-        
+        f = RandomPath()
+        self.assertTrue( os.path.isfile( f.path()))
+        f.remove()
+        self.assertFalse( os.path.isfile( f.path()))
         
     def testRandomDir(self):
         
-        d = RandomDir()
-        self.assertTrue( os.path.isdir( d.name()))
-        os.rmdir( d.name())
+        d = RandomPath( make="DIR")
+        self.assertTrue( os.path.isdir( d()))
+        d.remove()
         
-        d1 = RandomDir()
+        d1 = RandomPath( make="DIR")
         
-        d2 = RandomDir( d1.name())
+        d2 = RandomPath( d1(), make="DIR")
         
-        self.assertTrue( os.path.isdir( os.path.join( d1.name(), d2.name())))
+        self.assertTrue( os.path.isdir( os.path.join( d1(), d2())))
         
-        shutil.rmtree( d1.name())
+        shutil.rmtree( d1())
         
-        with RandomDir() as d1 :
-            with RandomDir( d1.name())  as d2 :
-                self.assertTrue( os.path.isdir( os.path.join( d1.name(), d2.name())))
+        with RandomPath( make="DIR") as d1 :
+            with RandomPath( d1(), make="DIR")  as d2 :
+                self.assertTrue( os.path.isdir( os.path.join( d1(), d2())))
                 
-        self.assertFalse(os.path.isdir( os.path.join( d1.name(), d2.name())))
+        self.assertFalse(os.path.isdir( os.path.join( d1(), d2())))
+        
+        d1 = RandomPath( make="DIR")
+        
+        self.assertTrue( os.path.isdir( d1()))
+        
+        d1.remove()
+        
+        self.assertFalse( os.path.isdir( d1()))
         
     def testRandomFile(self):
         
-        r = RandomFile(size = 0 )
-        self.assertTrue( os.path.isfile( r.name()))
+        r = RandomPath()
+        self.assertTrue( os.path.isfile( r()))
+        r.remove()
+        self.assertFalse(os.path.isfile(r()))
         
-        r = RandomFile(size = 1024)
-        self.assertTrue( os.path.isfile( r.name()))
-        self.assertEqual(os.path.getsize(r.name()), 1024)
+        r = RandomPath().populate(size = 1024)
+        self.assertTrue( os.path.isfile( r()))
+        self.assertEqual(os.path.getsize(r()), 1024)
         
-        self.assertEqual( r.name(), os.path.join( r.dirname(), r.basename()))
-        r.rm()
-        self.assertFalse(os.path.isfile(r.name()))
+        self.assertEqual( r(), os.path.join( r.dirname(), r.basename()))
+        r.remove()
+        self.assertFalse(os.path.isfile(r()))
+        
+        r = RandomPath()
+        r.populate( 1024 )
+        self.assertTrue( os.path.isfile( r()))
+        self.assertEqual(os.path.getsize(r()), 1024)
+        r.remove()
+        self.assertFalse( os.path.isfile( r()))
         
     def testRandomFileName(self):
-        f = RandomFile(  size = 1024 * 1024 )
-        self.assertEqual(os.path.getsize(f.name()), 1024 * 1024 )
-        f.rm()
-        self.assertFalse(os.path.isfile(f.name()))
- 
+        f = RandomPath().populate( 1024 * 1024 )
+        self.assertEqual(os.path.getsize(f()), 1024 * 1024 )
+        self.assertEqual(os.path.getsize(f()), f.size())
+        f.remove()
+        self.assertFalse(os.path.isfile(f.path()))
+        self.assertEqual( 0, f.size())
         
     def testRandomFile1024(self, size = 1024):
-        r = RandomFile(size = 1024 )
-        self.assertEqual(os.path.getsize( r.name()), r.size())
-        r.rm()
-        
-        self.assertFalse(os.path.isfile( r.name()))
+        r = RandomPath().populate( 1024 )
+        self.assertEqual(os.path.getsize( r()), r.size())
+        r.remove()
+        self.assertFalse(os.path.isfile( r()))
         
     def testRandomFile2048(self):
         self.testRandomFile1024(1024 * 2)
@@ -109,14 +127,18 @@ class testRandomFile( unittest.TestCase )  :
             
         self.assertEqual( len( buf ), 10500 )
         
-    def randomTree(self, pre, suf, size, width, depth ):
+    def randomTreeHelper(self, pre, suf, size, width, depth ):
         dCount = 0
         tsize  = 0
         fCount = 0
-         
-        randRoot = RandomName().basename()
-        t = RandomTree( randRoot, prefix=pre, suffix=suf)
-        ( dirCount, fileCount, size ) = t.makeRandomTree( size, width, depth )
+        
+        # randRoot needs to exist
+        randRoot = RandomPath( prefix=pre, suffix=suf, make="DIR") ;
+        t = RandomTree( randRoot(), prefix=pre, suffix=suf)
+        dirCount = t.dirsCount() ;
+        fileCount = t.filesCount() ;
+        size = t.size() ;
+        
         for i in t.dirs() :
             name = os.path.basename( i )
             self.assertTrue( os.path.isdir( i ))
@@ -148,15 +170,15 @@ class testRandomFile( unittest.TestCase )  :
 
     def testRandomTree(self):
         
-        self.randomTree( pre="", suf="", size=0, width=1, depth=1)
+        self.randomTreeHelper( pre="", suf="", size=0, width=1, depth=1)
         
-        self.randomTree( pre="123", suf="", size=1, width=1, depth=1)
+        self.randomTreeHelper( pre="123", suf="", size=1, width=1, depth=1)
         
-        self.randomTree( pre="123", suf="", size=1, width=2, depth=1)
+        self.randomTreeHelper( pre="123", suf="", size=1, width=2, depth=1)
         
-        self.randomTree( pre="123", suf="XYZ", size=243, width=3, depth=2)
+        self.randomTreeHelper( pre="123", suf="XYZ", size=243, width=3, depth=2)
         
-        self.randomTree( pre="123", suf="XYZ", size=243, width=3, depth=2)
+        self.randomTreeHelper( pre="123", suf="XYZ", size=243, width=3, depth=2)
         
         
 if __name__ == '__main__':
